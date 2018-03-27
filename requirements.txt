@@ -1,0 +1,5 @@
+TA-Lib==0.4.17
+plotly==2.4.1
+numpy==1.14.1
+Quandl==3.3.0
+jupyterlab==0.31.8
