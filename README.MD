@@ -6,9 +6,10 @@ Github repository for the machine learning trading algorithm. Still a work in pr
 
 ### Setup
 1. Have pip installed on your [system](https://pip.pypa.io/en/stable/) 
-2. Run pip install -r requirements.txt
-3. Run the command jupyter lab inside src directory
-4. Go into the ipython notebook candle stick plot and play around
+2. Also you will need to install Ta-Lib at C++ Lib(Dependency), checkout [directions](https://github.com/mrjbq7/ta-lib)
+3. Run pip install -r requirements.txt, make sure this is for python3, may need to specify pip3
+4. Run the command jupyter lab inside src directory
+5. Go into the ipython notebook candle stick plot and play around
 
 ### To Do
 1. Implement optimization algorithm to decide on Q function weights
