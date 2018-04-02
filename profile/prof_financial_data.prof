@@ -1,0 +1,141 @@
+Timer unit: 1e-06 s
+
+Total time: 26.3444 s
+File: src/financial_data.py
+Function: __init__ at line 23
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    23                                               def __init__(self, input_size, split=0.5):
+    24                                                   """[finacial data object that parses various data formats]
+    25                                           
+    26                                                   Arguments:
+    27                                                       input_size {[int]} -- [Number of values used for prediciton in RNN]
+    28                                           
+    29                                                   """
+    30                                           
+    31                                                   self.input_size = input_size
+    32         1          4.0      4.0      0.0          self.data_ls = []  # Data List Containing all stock dataframes in each entry
+    33         1          2.0      2.0      0.0          self.norm_data_ls = [] # Normalized Data List Containing all stock dataframes in each entry
+    34         1          1.0      1.0      0.0          self.candle_data = []  # Candle Data List Containing RB, UB, LS
+    35         1          0.0      0.0      0.0          self.x_train = []  # Training data in observations
+    36         1          0.0      0.0      0.0          self.y_train = []  # Training data result
+    37         1          1.0      1.0      0.0          self.x_test = []  # Testing data in observations
+    38         1          0.0      0.0      0.0          self.y_test = []  # Training data result
+    39         1          1.0      1.0      0.0          self.split = split #Test Training Split Percent
+    40         1          1.0      1.0      0.0          self.get_data('Stock')  # Initialize stock data
+    41         1    1096877.0 1096877.0      4.2          self.prepare_data()  # Prepare and parse the data
+
+Total time: 17.8628 s
+File: src/financial_data.py
+Function: split_data at line 44
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    44                                               def split_data(self):
+    45                                                   """[method to split training and test data]
+    46                                           
+    47                                                   Keyword Arguments:
+    48                                                       split {float} -- [percentage to split train vs test] (default: {0.7})
+    49                                                   """
+    50                                           
+    51                                                   for stock in self.norm_data_ls:
+    52       506        502.0      1.0      0.0              for val in range(0, len(stock)-self.input_size-1):
+    53    613990     422317.0      0.7      2.4                  self.x_train.append(
+    54    613485     420716.0      0.7      2.4                      stock.Close.values[val:val+self.input_size])
+    55    613485    8273993.0     13.5     46.3                  self.y_train.append(stock.Close.values[val+self.input_size+1])
+    56    613485    8209695.0     13.4     46.0          self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
+    57         1          1.0      1.0      0.0              self.x_train, self.y_train, test_size=self.split, random_state=0)
+
+Total time: 1.09687 s
+File: src/financial_data.py
+Function: get_data at line 60
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    60                                               def get_data(self, typeDat, queryDic={}):
+    61                                                   """[router function to get data from different datasources]
+    62                                           
+    63                                                   Arguments:
+    64                                                       typeDat {[str]} -- [datasource to use string]
+    65                                           
+    66                                                   Keyword Arguments:
+    67                                                       queryDic {dict} -- [contains query fields for each datasource] (default: {{}})
+    68                                                   """
+    69                                           
+    70                                                   if typeDat == 'Stock':
+    71         1          1.0      1.0      0.0              res = self.__get_stock_data()
+    72         1    1096864.0 1096864.0    100.0          if res:
+    73         1          1.0      1.0      0.0              self.data_ls = res
+    74         1          2.0      2.0      0.0          else:
+    75                                                       print('No Data Found')
+
+Total time: 25.2454 s
+File: src/financial_data.py
+Function: prepare_data at line 78
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    78                                               def prepare_data(self):
+    79                                                   """[will clean, normalize, create candle sticks and split up the data]
+    80                                                   """
+    81                                           
+    82                                                   self.clean_data()
+    83         1    2406415.0 2406415.0      9.5          self.normalize_data()
+    84         1    2228250.0 2228250.0      8.8  
+    85                                                   for stock in self.norm_data_ls:
+    86       506        386.0      0.8      0.0              RB = 100.0 * (stock.Close - stock.Open) / (stock.Open)
+    87       505     396878.0    785.9      1.6              US = 100.0 * (stock.Close - stock.Open) / (stock.High - stock.Open)
+    88       505     460780.0    912.4      1.8              LS = 100.0 * (stock.Close - stock.Open) / (stock.Close - stock.Low)
+    89       505     450030.0    891.1      1.8              candle_data = [RB, US, LS]
+    90       505        635.0      1.3      0.0              self.candle_data.append(candle_data)
+    91       505        664.0      1.3      0.0          self.split_data()
+
+Total time: 2.40457 s
+File: src/financial_data.py
+Function: clean_data at line 94
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    94                                               def clean_data(self):
+    95                                                   """[will remove any NaNs inside dataset with mean value near it]
+    96                                                   """
+    97                                           
+    98                                                   for stock in self.data_ls:
+    99       506        868.0      1.7      0.0              imputer = Imputer(missing_values='NaN', strategy='mean', axis=0)
+   100       505       3614.0      7.2      0.2              imputer = imputer.fit(stock.iloc[:, 1:6])
+   101       505     658330.0   1303.6     27.4              stock.iloc[:, 1:6] = imputer.transform(stock.iloc[:, 1:6])
+
+Total time: 2.2258 s
+File: src/financial_data.py
+Function: normalize_data at line 104
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   104                                               def normalize_data(self):
+   105                                                   """[will perform a min max scaler transformation on dataset]
+   106                                                   """
+   107                                           
+   108                                                   for stock in self.data_ls:
+   109       506        399.0      0.8      0.0              scaler = MinMaxScaler()
+   110       505       3282.0      6.5      0.1              norm_st = stock
+   111       505        289.0      0.6      0.0              scaler.fit(stock.iloc[:, 1:6])
+   112       505     436960.0    865.3     19.6              norm_st.iloc[:, 1:6] = scaler.transform(stock.iloc[:, 1:6])
+   113       505    1783553.0   3531.8     80.1              self.norm_data_ls.append(norm_st)
+
+Total time: 1.09684 s
+File: src/financial_data.py
+Function: __get_stock_data at line 116
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   116                                               def __get_stock_data(self):
+   117                                                   """[gets stock data from pickled file of 5 year historic stocks]
+   118                                           
+   119                                                   Returns:
+   120                                                       [list] -- [stock dataframes in each list entry]
+   121                                                   """
+   122                                           
+   123                                                   stock_val = pickle.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)),'data','stock_vals.p'), 'rb'))
+   124         1    1096834.0 1096834.0    100.0          return stock_val
+

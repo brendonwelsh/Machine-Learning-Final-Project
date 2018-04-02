@@ -1,8 +1,14 @@
-import numpy as np
 import pickle
+import os
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import Imputer
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
+import numpy as np
+try:
+    profile  # throws an exception when profile isn't defined
+except NameError:
+    def profile(x): return x
+
 
 class financial_data:
     """
@@ -15,8 +21,8 @@ class financial_data:
     -Perform more erro checking
     -Allow more customizable test train data
     """
-
-    def __init__(self, input_size):
+    @profile
+    def __init__(self, input_size, split=0.5):
         """[finacial data object that parses various data formats]
 
         Arguments:
@@ -33,10 +39,12 @@ class financial_data:
         self.y_train = []  # Training data result
         self.x_test = []  # Testing data in observations
         self.y_test = []  # Training data result
+        self.split = split  # Test Training Split Percent
         self.get_data('Stock')  # Initialize stock data
         self.prepare_data()  # Prepare and parse the data
 
-    def split_data(self, split=0.7):
+    @profile
+    def split_data(self):
         """[method to split training and test data]
 
         Keyword Arguments:
@@ -46,11 +54,12 @@ class financial_data:
         for stock in self.norm_data_ls:
             for val in range(0, len(stock)-self.input_size-1):
                 self.x_train.append(
-                    [stock.Close.values[val:val+self.input_size]])
+                    stock.Close.values[val:val+self.input_size])
                 self.y_train.append(stock.Close.values[val+self.input_size+1])
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
-            self.x_train, self.y_train, test_size=split, random_state=0)
+            self.x_train, self.y_train, test_size=self.split, random_state=0)
 
+    @profile
     def get_data(self, typeDat, queryDic={}):
         """[router function to get data from different datasources]
 
@@ -68,6 +77,7 @@ class financial_data:
         else:
             print('No Data Found')
 
+    @profile
     def prepare_data(self):
         """[will clean, normalize, create candle sticks and split up the data]
         """
@@ -75,14 +85,34 @@ class financial_data:
         self.clean_data()
         self.normalize_data()
 
-        for stock in self.norm_data_ls:
-            RB = 100.0 * (stock.Close - stock.Open) / (stock.Open)
-            US = 100.0 * (stock.Close - stock.Open) / (stock.High - stock.Open)
-            LS = 100.0 * (stock.Close - stock.Open) / (stock.Close - stock.Low)
-            candle_data = [RB, US, LS]
+        for stock in self.data_ls:
+            RB = 100.0 * (stock.Close.values -
+                          stock.Open.values) / (stock.Open.values)
+            RB = RB.reshape(1, -1)
+            US = 100.0 * (stock.Close.values - stock.Open.values) / \
+                (stock.High.values - stock.Open.values)
+            US = US.reshape(1, -1)
+            LS = 100.0 * (stock.Close.values - stock.Open.values) / \
+                (stock.Close.values - stock.Low.values)
+            LS = LS.reshape(1, -1)
+            candle_data = [self.clean_and_scale(
+                RB), self.clean_and_scale(US), self.clean_and_scale(LS)]
             self.candle_data.append(candle_data)
-        self.split_data(split=0.7)
 
+        self.split_data()
+
+    def clean_and_scale(self, candle):
+        scaler = MinMaxScaler()
+        imputer = Imputer(missing_values='NaN', strategy='mean', axis=0)
+        candle[np.isinf(candle)] = max(candle[np.isfinite(candle)])
+        candle = candle.reshape(-1, 1)
+        imputer = imputer.fit(candle)
+        candle = imputer.transform(candle)
+        scaler.fit(candle)
+        candle = scaler.transform(candle)
+        return candle.reshape(1, -1)[0]
+
+    @profile
     def clean_data(self):
         """[will remove any NaNs inside dataset with mean value near it]
         """
@@ -92,6 +122,7 @@ class financial_data:
             imputer = imputer.fit(stock.iloc[:, 1:6])
             stock.iloc[:, 1:6] = imputer.transform(stock.iloc[:, 1:6])
 
+    @profile
     def normalize_data(self):
         """[will perform a min max scaler transformation on dataset]
         """
@@ -103,6 +134,7 @@ class financial_data:
             norm_st.iloc[:, 1:6] = scaler.transform(stock.iloc[:, 1:6])
             self.norm_data_ls.append(norm_st)
 
+    @profile
     def __get_stock_data(self):
         """[gets stock data from pickled file of 5 year historic stocks]
 
@@ -110,8 +142,13 @@ class financial_data:
             [list] -- [stock dataframes in each list entry]
         """
 
-        stock_val = pickle.load(open('data/stock_vals.p', 'rb'))
+        stock_val = pickle.load(open(os.path.join(os.path.dirname(
+            os.path.realpath(__file__)), 'data', 'stock_vals.p'), 'rb'))
         return stock_val
+
+
+if __name__ == '__main__':
+    data_fd = financial_data(10)
 
     '''
     Possible Future Addition for other data sources
