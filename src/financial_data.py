@@ -1,9 +1,8 @@
-import pickle
 import os
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import Imputer
-from sklearn.model_selection import train_test_split
+import pickle
 import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import Imputer, MinMaxScaler
 try:
     profile  # throws an exception when profile isn't defined
 except NameError:
@@ -12,24 +11,23 @@ except NameError:
 
 class financial_data:
     """
-    financial data class contains mutiple different
+    financial data class contains multiple different
     datasources from Quandl, CSVs and other sources.
     Which are cleaned, scaled and split in this class.
-    This data will then pass into the predicition model.
+    This data will then pass into the prediction model.
     TODO:
     -Expand datasources available
-    -Perform more erro checking
+    -Perform more error checking
     -Allow more customizable test train data
     """
     @profile
     def __init__(self, input_size, split=0.5):
-        """[finacial data object that parses various data formats]
+        """[financial data object that parses various data formats]
 
         Arguments:
-            input_size {[int]} -- [Number of values used for prediciton in RNN]
+            input_size {[int]} -- [Number of values used for prediction in RNN]
 
         """
-
         self.input_size = input_size
         self.data_ls = []  # Data List Containing all stock dataframes in each entry
         # Normalized Data List Containing all stock dataframes in each entry
@@ -40,7 +38,7 @@ class financial_data:
         self.x_test = []  # Testing data in observations
         self.y_test = []  # Training data result
         self.split = split  # Test Training Split Percent
-        self.get_data('Stock')  # Initialize stock data
+        self.data_ls = self.get_data('Stock')  # Initialize stock data
         self.prepare_data()  # Prepare and parse the data
 
     @profile
@@ -73,7 +71,7 @@ class financial_data:
         if typeDat == 'Stock':
             res = self.__get_stock_data()
         if res:
-            self.data_ls = res
+            return res
         else:
             print('No Data Found')
 

@@ -1,0 +1,305 @@
+Timer unit: 1e-06 s
+
+Total time: 27.8818 s
+File: src/financial_data.py
+Function: __init__ at line 23
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    23                                               @profile
+    24                                               def __init__(self, input_size, split=0.5):
+    25                                                   """[financial data object that parses various data formats]
+    26                                           
+    27                                                   Arguments:
+    28                                                       input_size {[int]} -- [Number of values used for prediction in RNN]
+    29                                           
+    30                                                   """
+    31         1          1.0      1.0      0.0          self.input_size = input_size
+    32         1          1.0      1.0      0.0          self.data_ls = []  # Data List Containing all stock dataframes in each entry
+    33                                                   # Normalized Data List Containing all stock dataframes in each entry
+    34         1          0.0      0.0      0.0          self.norm_data_ls = []
+    35         1          1.0      1.0      0.0          self.candle_data = []  # Candle Data List Containing RB, UB, LS
+    36         1          2.0      2.0      0.0          self.x_train = []  # Training data in observations
+    37         1          2.0      2.0      0.0          self.y_train = []  # Training data result
+    38         1          2.0      2.0      0.0          self.x_test = []  # Testing data in observations
+    39         1          1.0      1.0      0.0          self.y_test = []  # Training data result
+    40         1          2.0      2.0      0.0          self.split = split  # Test Training Split Percent
+    41         1    1154988.0 1154988.0      4.1          self.data_ls = self.get_data('Stock')  # Initialize stock data
+    42         1   26726761.0 26726761.0     95.9          self.prepare_data()  # Prepare and parse the data
+
+Total time: 18.6649 s
+File: src/financial_data.py
+Function: split_data at line 44
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    44                                               @profile
+    45                                               def split_data(self):
+    46                                                   """[method to split training and test data]
+    47                                           
+    48                                                   Keyword Arguments:
+    49                                                       split {float} -- [percentage to split train vs test] (default: {0.7})
+    50                                                   """
+    51                                           
+    52       506        625.0      1.2      0.0          for stock in self.norm_data_ls:
+    53    613990     412413.0      0.7      2.2              for val in range(0, len(stock)-self.input_size-1):
+    54    613485     416581.0      0.7      2.2                  self.x_train.append(
+    55    613485    8614862.0     14.0     46.2                      stock.Close.values[val:val+self.input_size])
+    56    613485    8660298.0     14.1     46.4                  self.y_train.append(stock.Close.values[val+self.input_size+1])
+    57         1          1.0      1.0      0.0          self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
+    58         1     560158.0 560158.0      3.0              self.x_train, self.y_train, test_size=self.split, random_state=0)
+
+Total time: 1.15498 s
+File: src/financial_data.py
+Function: get_data at line 60
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    60                                               @profile
+    61                                               def get_data(self, typeDat, queryDic={}):
+    62                                                   """[router function to get data from different datasources]
+    63                                           
+    64                                                   Arguments:
+    65                                                       typeDat {[str]} -- [datasource to use string]
+    66                                           
+    67                                                   Keyword Arguments:
+    68                                                       queryDic {dict} -- [contains query fields for each datasource] (default: {{}})
+    69                                                   """
+    70                                           
+    71         1          1.0      1.0      0.0          if typeDat == 'Stock':
+    72         1    1154976.0 1154976.0    100.0              res = self.__get_stock_data()
+    73         1          1.0      1.0      0.0          if res:
+    74         1          0.0      0.0      0.0              return res
+    75                                                   else:
+    76                                                       print('No Data Found')
+
+Total time: 26.7219 s
+File: src/financial_data.py
+Function: prepare_data at line 78
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    78                                               @profile
+    79                                               def prepare_data(self):
+    80                                                   """[will clean, normalize, create candle sticks and split up the data]
+    81                                                   """
+    82                                           
+    83         1    2567453.0 2567453.0      9.6          self.clean_data()
+    84         1    2219612.0 2219612.0      8.3          self.normalize_data()
+    85                                           
+    86       506        489.0      1.0      0.0          for stock in self.data_ls:
+    87                                                       RB = 100.0 * (stock.Close.values -
+    88       505     137288.0    271.9      0.5                            stock.Open.values) / (stock.Open.values)
+    89       505       1557.0      3.1      0.0              RB = RB.reshape(1, -1)
+    90       505      17107.0     33.9      0.1              US = 100.0 * (stock.Close.values - stock.Open.values) / \
+    91       505      61192.0    121.2      0.2                  (stock.High.values - stock.Open.values)
+    92       505       1292.0      2.6      0.0              US = US.reshape(1, -1)
+    93       505      16561.0     32.8      0.1              LS = 100.0 * (stock.Close.values - stock.Open.values) / \
+    94       505      60895.0    120.6      0.2                  (stock.Close.values - stock.Low.values)
+    95       505       1198.0      2.4      0.0              LS = LS.reshape(1, -1)
+    96       505        419.0      0.8      0.0              candle_data = [self.clean_and_scale(
+    97       505    1497536.0   2965.4      5.6                  RB), self.clean_and_scale(US), self.clean_and_scale(LS)]
+    98       505       1023.0      2.0      0.0              self.candle_data.append(candle_data)
+    99                                           
+   100         1   20138323.0 20138323.0     75.4          self.split_data()
+
+Total time: 2.56522 s
+File: src/financial_data.py
+Function: clean_data at line 113
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   113                                               @profile
+   114                                               def clean_data(self):
+   115                                                   """[will remove any NaNs inside dataset with mean value near it]
+   116                                                   """
+   117                                           
+   118       506       1025.0      2.0      0.0          for stock in self.data_ls:
+   119       505       3946.0      7.8      0.2              imputer = Imputer(missing_values='NaN', strategy='mean', axis=0)
+   120       505     723726.0   1433.1     28.2              imputer = imputer.fit(stock.iloc[:, 1:6])
+   121       505    1836522.0   3636.7     71.6              stock.iloc[:, 1:6] = imputer.transform(stock.iloc[:, 1:6])
+
+Total time: 2.21721 s
+File: src/financial_data.py
+Function: normalize_data at line 123
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   123                                               @profile
+   124                                               def normalize_data(self):
+   125                                                   """[will perform a min max scaler transformation on dataset]
+   126                                                   """
+   127                                           
+   128       506        467.0      0.9      0.0          for stock in self.data_ls:
+   129       505       3334.0      6.6      0.2              scaler = MinMaxScaler()
+   130       505        301.0      0.6      0.0              norm_st = stock
+   131       505     440097.0    871.5     19.8              scaler.fit(stock.iloc[:, 1:6])
+   132       505    1771790.0   3508.5     79.9              norm_st.iloc[:, 1:6] = scaler.transform(stock.iloc[:, 1:6])
+   133       505       1221.0      2.4      0.1              self.norm_data_ls.append(norm_st)
+
+Total time: 1.15496 s
+File: src/financial_data.py
+Function: __get_stock_data at line 135
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   135                                               @profile
+   136                                               def __get_stock_data(self):
+   137                                                   """[gets stock data from pickled file of 5 year historic stocks]
+   138                                           
+   139                                                   Returns:
+   140                                                       [list] -- [stock dataframes in each list entry]
+   141                                                   """
+   142                                           
+   143         1          4.0      4.0      0.0          stock_val = pickle.load(open(os.path.join(os.path.dirname(
+   144         1    1154958.0 1154958.0    100.0              os.path.realpath(__file__)), 'data', 'stock_vals.p'), 'rb'))
+   145         1          2.0      2.0      0.0          return stock_val
+
+Total time: 27.8827 s
+File: src/prediction_model.py
+Function: __init__ at line 21
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    21                                               @profile
+    22                                               def __init__(self, input_size=10, hidden_size=128, output_size=1, learning_rate=0.0005):
+    23                                                   """[constructor for class]
+    24                                           
+    25                                                   Keyword Arguments:
+    26                                                       input_size {int} -- [# of past samples used in RNN] (default: {10})
+    27                                                       hidden_size {int} -- [number of hidden units in RNN] (default: {128})
+    28                                                       output_size {int} -- [# of samples predicted] (default: {1})
+    29                                                       learning_rate {float} -- [ML parameter for model] (default: {0.0005})
+    30                                                   """
+    31         1        661.0    661.0      0.0          self.rnn = RNN(input_size, hidden_size, output_size)
+    32         1        103.0    103.0      0.0          self.optimizer = optim.Adam(self.rnn.parameters(), learning_rate)
+    33         1   27881787.0 27881787.0    100.0          self.data = fd.financial_data(input_size)
+    34         1        126.0    126.0      0.0          self.criterion = nn.MSELoss()
+
+Total time: 104.678 s
+File: src/prediction_model.py
+Function: train_data at line 36
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    36                                               @profile
+    37                                               def train_data(self):
+    38                                                   """[train data will train using the financial data class on 500+ stocks]
+    39                                                   """
+    40         1          1.0      1.0      0.0          epoch = 1
+    41         1          0.0      0.0      0.0          print_every = 100
+    42         1          0.0      0.0      0.0          plot_every = 10
+    43         1          1.0      1.0      0.0          total_loss = 0
+    44         1          2.0      2.0      0.0          n_iters = len(self.data.x_train)
+    45         1          1.0      1.0      0.0          all_losses = []
+    46         1          5.0      5.0      0.0          start = time.time()
+    47         1     315413.0 315413.0      0.3          x_train = Variable(torch.Tensor(self.data.x_train))
+    48         1      28873.0  28873.0      0.0          y_train = Variable(torch.Tensor(self.data.y_train))
+    49         2         10.0      5.0      0.0          for j in range(0, epoch):
+    50    306743     258061.0      0.8      0.2              for i in range(0, n_iters):
+    51    306742     267000.0      0.9      0.3                  output, loss = self.train(
+    52    306742  103156174.0    336.3     98.5                      x_train[i].unsqueeze(0), y_train[i].unsqueeze(0))
+    53    306742     299174.0      1.0      0.3                  total_loss += loss
+    54                                                           #if i % print_every == 0:
+    55                                                               #print('%s (%d %d%%) %.4f' %
+    56                                                               #      (self.timeSince(start), i, i / n_iters * 100, loss))
+    57    306742     293534.0      1.0      0.3                  if i % plot_every == 0:
+    58     30675      36768.0      1.2      0.0                      all_losses.append(total_loss / plot_every)
+    59     30675      22657.0      0.7      0.0                      total_loss = 0
+
+Total time: 43.3337 s
+File: src/prediction_model.py
+Function: test_data at line 61
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    61                                               @profile
+    62                                               def test_data(self):
+    63                                                   """[uses test data from financial data class and predicts output with various error tolerances]
+    64                                           
+    65                                                   Returns:
+    66                                                       [list] -- [int list of accuracy values]
+    67                                                   """
+    68         1     282222.0 282222.0      0.7          x_test = Variable(torch.Tensor(self.data.x_test))
+    69         1      21075.0  21075.0      0.0          y_test = Variable(torch.Tensor(self.data.y_test))
+    70         1        763.0    763.0      0.0          y_res = Variable(torch.zeros(len(x_test)))
+    71    306744     287893.0      0.9      0.7          for i in range(0, len(x_test)):
+    72    306743   42707209.0    139.2     98.6              y_res[i] = self.test(x_test[i].unsqueeze(0))
+    73         1          1.0      1.0      0.0          errs = [.01, .1, 1, 3, 5, 7, 10]
+    74         1          1.0      1.0      0.0          p_test = []
+    75         8         22.0      2.8      0.0          for er in errs:
+    76         7          8.0      1.1      0.0              p_test.append(
+    77         7      34500.0   4928.6      0.1                  len(((((torch.abs(y_test-y_res)/y_test))*100) < er).nonzero())/len(x_test))
+    78         1          1.0      1.0      0.0          return p_test
+
+Total time: 85.2341 s
+File: src/prediction_model.py
+Function: train at line 80
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    80                                               @profile
+    81                                               def train(self, input_tensor, output_tensor):
+    82                                                   """[performs training on neural network passing through data]
+    83                                           
+    84                                                   Arguments:
+    85                                                       input_tensor {[Pytorch Tensor 1xinput_size]} -- [input sample for rnn]
+    86                                                       output_tensor {[Pytorch Tensor 1]} -- [output sample from data for input tensor]
+    87                                           
+    88                                                   Returns:
+    89                                                       output: [float] -- [result of predicting through RNN]
+    90                                                       lost: [float] -- [lost of data used for training]
+    91                                                   """
+    92    306742    2450421.0      8.0      2.9          hidden = self.rnn.initHidden()
+    93    306742     206012.0      0.7      0.2          loss = 0
+    94    613484    1762578.0      2.9      2.1          for i in range(input_tensor.size()[0]):
+    95    306742   26882561.0     87.6     31.5              output, hidden = self.rnn.forward(input_tensor[i], hidden)
+    96    306742    9188508.0     30.0     10.8              loss += self.criterion(output, output_tensor[i])
+    97    306742    2702244.0      8.8      3.2              self.optimizer.zero_grad()
+    98    306742   26706067.0     87.1     31.3          loss.backward()
+    99    306742   13252342.0     43.2     15.5          self.optimizer.step()
+   100    306742    2083414.0      6.8      2.4          return output, loss.data[0] / input_tensor.size()[0]
+
+Total time: 30.1421 s
+File: src/prediction_model.py
+Function: test at line 102
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   102                                               @profile
+   103                                               def test(self, input_test):
+   104                                                   """[tests out given input tensor through data to get output]
+   105                                           
+   106                                                   Arguments:
+   107                                                       input_test {[Pytorch Tensor 1 x input_size]} -- [input sample for rnn]
+   108                                           
+   109                                                   Returns:
+   110                                                       [float] -- [predicted sample of data]
+   111                                                   """
+   112    306743    1741212.0      5.7      5.8          hidden = self.rnn.initHidden()
+   113    613486    1689206.0      2.8      5.6          for i in range(input_test.size()[0]):
+   114    306743   26567552.0     86.6     88.1              output, hidden = self.rnn.forward(input_test[i], hidden)
+   115    306743     144103.0      0.5      0.5          return output
+
+Total time: 0 s
+File: src/prediction_model.py
+Function: timeSince at line 117
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   117                                               @profile
+   118                                               def timeSince(self, since):
+   119                                                   """[returns time since input time]
+   120                                           
+   121                                                   Arguments:
+   122                                                       since {[float]} -- [time value at begining from time]
+   123                                           
+   124                                                   Returns:
+   125                                                       [str] -- [formatted minute second time]
+   126                                                   """
+   127                                                   now = time.time()
+   128                                                   s = now - since
+   129                                                   m = math.floor(s / 60)
+   130                                                   s -= m * 60
+   131                                                   return '%dm %ds' % (m, s)
+
