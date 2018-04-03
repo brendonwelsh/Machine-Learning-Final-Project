@@ -12,9 +12,11 @@ Github repository for the machine learning trading algorithm. Still a work in pr
 5. Run the command jupyter lab inside src directory
 6. Go into the ipython notebook candle stick plot and play around
 
-### To Do
-1. Implement optimization algorithm to decide on Q function weights
-2. Use these q function weights in order to develop a trading policy
-3. Further investigation on ways to improve either of these two
+## Running Code
+The code consists of two python classes. One financial data which will clean and split up stock data for training of the recurrent neural network. Additionally, the class prediction_model defines the recurrent neural network. Further work is being done on reinforcement learning from this prediction model. Tensorboard can be used to visualize training accuracy. Pytest is being used in order to test the code is working.
+```
+tensorboard --logdir runs
+python src/prediction_model.py
+```
 
 Northeastern University 2018

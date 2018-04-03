@@ -9,8 +9,8 @@ try:
     profile  # throws an exception when profile isn't defined
 except NameError:
     def profile(x): return x
-
-
+from tensorboard_logger import configure, log_value
+configure('runs/run')
 class prediction_model:
     '''
     class that holds RNN model
@@ -20,7 +20,7 @@ class prediction_model:
     (http://pytorch.org/tutorials/intermediate/char_rnn_classification_tutorial.html)
     '''
     @profile
-    def __init__(self, input_size=10, hidden_size=128, output_size=1, learning_rate=0.0005):
+    def __init__(self, input_size=10, hidden_size=128, output_size=1, learning_rate=0.0001, epochs=5, log_name='runs/runs'):
         """[constructor for class]
 
         Keyword Arguments:
@@ -33,12 +33,14 @@ class prediction_model:
         self.optimizer = optim.Adam(self.rnn.parameters(), learning_rate)
         self.data = fd.financial_data(input_size)
         self.criterion = nn.MSELoss()
+        self.epochs=epochs
+        
 
     @profile
     def train_data(self):
         """[train data will train using the financial data class on 500+ stocks]
         """
-        epoch = 15
+        epoch = self.epochs
         print_every = 10000
         plot_every = 10
         total_loss = 0
@@ -57,6 +59,7 @@ class prediction_model:
                           (self.timeSince(start), i, i / n_iters * 100, loss))
                 if i % plot_every == 0:
                     all_losses.append(total_loss / plot_every)
+                    log_value('loss', total_loss / plot_every, j*n_iters+i)
                     total_loss = 0
 
     @profile
