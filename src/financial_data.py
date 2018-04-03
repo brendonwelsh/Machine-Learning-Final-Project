@@ -1,12 +1,14 @@
 import os
 import pickle
 import numpy as np
+import warnings
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import Imputer, MinMaxScaler
 try:
     profile  # throws an exception when profile isn't defined
 except NameError:
     def profile(x): return x
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 class financial_data:

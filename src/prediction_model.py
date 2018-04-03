@@ -10,6 +10,7 @@ try:
 except NameError:
     def profile(x): return x
 
+
 class prediction_model:
     '''
     class that holds RNN model
@@ -37,8 +38,8 @@ class prediction_model:
     def train_data(self):
         """[train data will train using the financial data class on 500+ stocks]
         """
-        epoch = 1
-        print_every = 100
+        epoch = 15
+        print_every = 10000
         plot_every = 10
         total_loss = 0
         n_iters = len(self.data.x_train)
@@ -51,9 +52,9 @@ class prediction_model:
                 output, loss = self.train(
                     x_train[i].unsqueeze(0), y_train[i].unsqueeze(0))
                 total_loss += loss
-                #if i % print_every == 0:
-                    #print('%s (%d %d%%) %.4f' %
-                    #      (self.timeSince(start), i, i / n_iters * 100, loss))
+                if i % print_every == 0:
+                    print('%s (%d %d%%) %.4f' %
+                          (self.timeSince(start), i, i / n_iters * 100, loss))
                 if i % plot_every == 0:
                     all_losses.append(total_loss / plot_every)
                     total_loss = 0
