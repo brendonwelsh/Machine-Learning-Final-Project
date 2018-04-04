@@ -4,6 +4,7 @@ import numpy as np
 import warnings
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import Imputer, MinMaxScaler
+import quandl
 try:
     profile  # throws an exception when profile isn't defined
 except NameError:
@@ -44,20 +45,34 @@ class financial_data:
         self.prepare_data()  # Prepare and parse the data
 
     @profile
-    def split_data(self):
+    def split_data(self, norm_data_ls):
         """[method to split training and test data]
 
         Keyword Arguments:
             split {float} -- [percentage to split train vs test] (default: {0.7})
         """
-
-        for stock in self.norm_data_ls:
+        x_train = []
+        y_train = []
+        for stock in norm_data_ls:
             for val in range(0, len(stock)-self.input_size-1):
-                self.x_train.append(
+                x_train.append(
                     stock.Close.values[val:val+self.input_size])
-                self.y_train.append(stock.Close.values[val+self.input_size+1])
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
-            self.x_train, self.y_train, test_size=self.split, random_state=0)
+                y_train.append(stock.Close.values[val+self.input_size+1])
+        return x_train, y_train
+
+    def shuffle_data(self, x_train, y_train):
+        """[shuffles testing and training data ]
+
+        Arguments:
+            x_train {[PyTorch Tensor]} -- [pytorch input data of training]
+            y_train {[PyTorch Tensor]} -- [pytorch output data of training]]
+
+        Returns:
+            [list] -- [lists of shuffled training and testing data]
+        """
+        x_train, x_test, y_train, y_test = train_test_split(
+            x_train, y_train, test_size=self.split, random_state=0)
+        return x_train, y_train, x_test, y_test
 
     @profile
     def get_data(self, typeDat, queryDic={}):
@@ -72,6 +87,9 @@ class financial_data:
 
         if typeDat == 'Stock':
             res = self.__get_stock_data()
+        elif typeDat == 'Wiki':
+            res = self.__get_wiki_data(queryDic)
+            return res
         if res:
             return res
         else:
@@ -82,8 +100,8 @@ class financial_data:
         """[will clean, normalize, create candle sticks and split up the data]
         """
 
-        self.clean_data()
-        self.normalize_data()
+        self.data_ls = self.clean_data(self.data_ls)
+        self.norm_data_ls = self.normalize_data(self.data_ls)
 
         for stock in self.data_ls:
             RB = 100.0 * (stock.Close.values -
@@ -98,10 +116,19 @@ class financial_data:
             candle_data = [self.clean_and_scale(
                 RB), self.clean_and_scale(US), self.clean_and_scale(LS)]
             self.candle_data.append(candle_data)
-
-        self.split_data()
+        self.x_train, self.y_train = self.split_data(self.norm_data_ls)
+        self.x_train, self.y_train, self.x_test, self.y_test = self.shuffle_data(
+            self.x_train, self.y_train)
 
     def clean_and_scale(self, candle):
+        """[clean data in candle stick]
+
+        Arguments:
+            candle {[list]} -- [candle stick info]
+
+        Returns:
+            [List] -- [list of candle data]
+        """
         scaler = MinMaxScaler()
         imputer = Imputer(missing_values='NaN', strategy='mean', axis=0)
         candle[np.isinf(candle)] = max(candle[np.isfinite(candle)])
@@ -113,26 +140,28 @@ class financial_data:
         return candle.reshape(1, -1)[0]
 
     @profile
-    def clean_data(self):
+    def clean_data(self, data_ls):
         """[will remove any NaNs inside dataset with mean value near it]
         """
 
-        for stock in self.data_ls:
+        for stock in data_ls:
             imputer = Imputer(missing_values='NaN', strategy='mean', axis=0)
             imputer = imputer.fit(stock.iloc[:, 1:6])
             stock.iloc[:, 1:6] = imputer.transform(stock.iloc[:, 1:6])
+        return data_ls
 
     @profile
-    def normalize_data(self):
+    def normalize_data(self, data_ls):
         """[will perform a min max scaler transformation on dataset]
         """
-
-        for stock in self.data_ls:
+        norm_data_ls = []
+        for stock in data_ls:
             scaler = MinMaxScaler()
             norm_st = stock
             scaler.fit(stock.iloc[:, 1:6])
             norm_st.iloc[:, 1:6] = scaler.transform(stock.iloc[:, 1:6])
-            self.norm_data_ls.append(norm_st)
+            norm_data_ls.append(norm_st)
+        return norm_data_ls
 
     @profile
     def __get_stock_data(self):
@@ -146,39 +175,14 @@ class financial_data:
             os.path.realpath(__file__)), 'data', 'stock_vals.p'), 'rb'))
         return stock_val
 
+    def __get_wiki_data(self, queryDic):
+        stock = queryDic['Stock']
+        stock_val = quandl.get_table('WIKI/PRICES', ticker=stock)
+        stock_val.columns = ['ticker', 'date', 'Open', 'High', 'Low', 'Close', 'volume',
+                             'ex-dividend', 'split_ratio', 'adj_open', 'adj_high', 'adj_low',
+                             'adj_close', 'adj_volume']
+        return stock_val[['date', 'Open', 'High', 'Low', 'Close', 'volume', 'ticker']]
+
 
 if __name__ == '__main__':
     data_fd = financial_data(10)
-
-    '''
-    Possible Future Addition for other data sources
-    if typeDat == 'Wiki':
-            res = self.__get_wiki_data(queryDic)
-        elif typeDat == 'Quandl':
-            res = self.__get_quandl_data(queryDic)
-        el
-     def __get_quandl_data(self, queryDic):
-        try:
-            stock_val = quandl.get(queryDic['Query'])
-            return stock_val
-        except:
-            print('Error in attempting to get '+stock)
-            return ''   
-    def __get_wiki_data(self, queryDic):
-        try:
-            stock = queryDic['Stock']
-            if stock+'.csv' in os.listdir('data'):
-                print('Getting Cached')
-                stock_val = pd.read_csv(os.path.join('data', stock)+'.csv')
-            else:
-                print('Getting QUANDL')
-                stock_val = quandl.get_table('WIKI/PRICES', ticker=stock)
-                stock_val.columns = ['ticker', 'date', 'Open', 'High', 'Low', 'Close', 'volume',
-                                     'ex-dividend', 'split_ratio', 'adj_open', 'adj_high', 'adj_low',
-                                     'adj_close', 'adj_volume']
-                stock_val.to_csv(os.path.join('data', stock)+'.csv')
-            return stock_val
-        except:
-            print('Error in attempting to get '+stock)
-            return ''
-    '''

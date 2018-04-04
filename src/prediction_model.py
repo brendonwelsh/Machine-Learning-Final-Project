@@ -11,6 +11,8 @@ except NameError:
     def profile(x): return x
 from tensorboard_logger import configure, log_value
 configure('runs/run')
+
+
 class prediction_model:
     '''
     class that holds RNN model
@@ -20,7 +22,7 @@ class prediction_model:
     (http://pytorch.org/tutorials/intermediate/char_rnn_classification_tutorial.html)
     '''
     @profile
-    def __init__(self, input_size=10, hidden_size=128, output_size=1, learning_rate=0.0001, epochs=5, log_name='runs/runs'):
+    def __init__(self, input_size=10, hidden_size=128, output_size=1, learning_rate=0.0001, epochs=1, log_name='runs/runs'):
         """[constructor for class]
 
         Keyword Arguments:
@@ -33,8 +35,7 @@ class prediction_model:
         self.optimizer = optim.Adam(self.rnn.parameters(), learning_rate)
         self.data = fd.financial_data(input_size)
         self.criterion = nn.MSELoss()
-        self.epochs=epochs
-        
+        self.epochs = epochs
 
     @profile
     def train_data(self):
@@ -63,14 +64,14 @@ class prediction_model:
                     total_loss = 0
 
     @profile
-    def test_data(self):
+    def test_data(self, x_test, y_test):
         """[uses test data from financial data class and predicts output with various error tolerances]
 
         Returns:
             [list] -- [int list of accuracy values]
         """
-        x_test = Variable(torch.Tensor(self.data.x_test))
-        y_test = Variable(torch.Tensor(self.data.y_test))
+        x_test = Variable(torch.Tensor(x_test))
+        y_test = Variable(torch.Tensor(y_test))
         y_res = Variable(torch.zeros(len(x_test)))
         for i in range(0, len(x_test)):
             y_res[i] = self.test(x_test[i].unsqueeze(0))
@@ -79,7 +80,23 @@ class prediction_model:
         for er in errs:
             p_test.append(
                 len(((((torch.abs(y_test-y_res)/y_test))*100) < er).nonzero())/len(x_test))
-        return p_test
+        return p_test, y_res
+
+    @profile
+    def test_stock(self, data):
+        """[will test a single stock given input data from wiki stock price]
+
+        Arguments:
+            data {[list]} -- [list of close prices]
+
+        Returns:
+            [list] -- [list of errors, predicted results and tested result]
+        """
+        res = self.data.clean_data([data])
+        resT = self.data.normalize_data(res)
+        x_test, y_test = self.data.split_data(resT)
+        err, y_res = self.test_data(x_test, y_test)
+        return err, y_res, y_test
 
     @profile
     def train(self, input_tensor, output_tensor):
@@ -184,4 +201,4 @@ class RNN(nn.Module):
 if __name__ == '__main__':
     mod = prediction_model()
     mod.train_data()
-    mod.test_data()
+    mod.test_data(mod.data.x_test, mod.data.y_test)
