@@ -43,6 +43,7 @@ class financial_data:
         self.split = split  # Test Training Split Percent
         self.data_ls = self.get_data('Stock')  # Initialize stock data
         self.prepare_data()  # Prepare and parse the data
+        self.ticker_ls = [stock['Name'].values[1] for stock in self.data_ls]
 
     @profile
     def split_data(self, norm_data_ls):
@@ -177,7 +178,13 @@ class financial_data:
 
     def __get_wiki_data(self, queryDic):
         stock = queryDic['Stock']
+        if stock in self.ticker_ls:
+            print('Stock is used in triaining data')
+
         stock_val = quandl.get_table('WIKI/PRICES', ticker=stock)
+        if stock_val.empty:
+            print('Values undefined')
+            return
         stock_val.columns = ['ticker', 'date', 'Open', 'High', 'Low', 'Close', 'volume',
                              'ex-dividend', 'split_ratio', 'adj_open', 'adj_high', 'adj_low',
                              'adj_close', 'adj_volume']
