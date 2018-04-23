@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 import financial_data as fd
+import dataset_setup as ds
 try:
     profile  # throws an exception when profile isn't defined
 except NameError:
