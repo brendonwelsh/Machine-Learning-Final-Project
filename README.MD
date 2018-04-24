@@ -1,7 +1,7 @@
 # Machine Learning Final Project
 ## Trading Algorithm Python 3.5 
 
-![Alt text](src/lines.png)
+![Alt text](http://www1.coe.neu.edu/~abisulco/img/lines.png)
 Github repository for the machine learning trading algorithm. Still a work in progress. The goal is to use candle sticks in order to determine when to buy or hold a stock. 
 
 ### Setup
@@ -13,10 +13,10 @@ Github repository for the machine learning trading algorithm. Still a work in pr
 6. Go into the ipython notebook candle stick plot and play around
 
 ## Running Code
-The code consists of two python classes. One financial data which will clean and split up stock data for training of the recurrent neural network. Additionally, the class prediction_model defines the recurrent neural network. Further work is being done on reinforcement learning from this prediction model. Tensorboard can be used to visualize training accuracy. Pytest is being used in order to test the code is working.
+The main class that contains the data for processing in this code is financial data. This class imports 500 different stocks, cleans and scales the data. After this process is performed reinforcment learning is used in order to train to buy, sell or hold stocks. This code can be seen int he RL ipython notebook. 
+
 ```
-tensorboard --logdir runs
-python src/prediction_model.py
+jupyter lab
 ```
 
 Northeastern University 2018

@@ -1,12 +1,11 @@
 import torch.nn as nn
 
+
 class DQN(nn.Module):
-    def __init__(self, pm=None):
+    def __init__(self, input_size, hidden_size, actions):
         super(DQN, self).__init__()
-        hidden_size = 120  # Random Parameter that can be tuned
-        actions = 3  # 3 Different Actions Buy Sell Hold
         self.relu = nn.ReLU()
-        self.fc1 = nn.Linear(len(pm.data.x_test[1]), hidden_size)
+        self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc3 = nn.Linear(hidden_size, actions)
         self.softmax = nn.Softmax()
