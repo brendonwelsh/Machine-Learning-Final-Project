@@ -8,7 +8,7 @@ class DQN(nn.Module):
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc3 = nn.Linear(hidden_size, actions)
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=0)
 
     def forward(self, x):
         x = self.fc1(x)
