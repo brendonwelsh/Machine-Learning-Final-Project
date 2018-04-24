@@ -26,6 +26,7 @@ class ReinforcementLearning:
 
     def __init__(self, input_size=10, TICKER='MSFT', BATCH_SIZE=128, GAMMA=0.999, EPS_START=0.9, EPS_END=0.05,
                  EPS_DECAY=200, TARGET_UPDATE=10, REPLAY_MEMORY_CAPACITY=10000, NUM_EPISODES=1, hidden_layer=120, actions=3):
+
         self.TICKER = TICKER
         self.BATCH_SIZE = BATCH_SIZE
         self.GAMMA = GAMMA
@@ -34,11 +35,7 @@ class ReinforcementLearning:
         self.EPS_DECAY = EPS_DECAY
         self.TARGET_UPDATE = TARGET_UPDATE
         self.NUM_EPISODES = NUM_EPISODES
-        self.TRANSITION = namedtuple(
-            'Transition', ('state', 'action', 'next_state', 'reward'))
         self.fd = financial_data.financial_data(input_size)
-        self.state = self.fd.norm_data_ls[self.fd.ticker_ls.index(
-            TICKER)].Close
         self.date = self.fd.norm_data_ls[self.fd.ticker_ls.index(TICKER)].date
         self.policy_net = dqn.DQN(input_size, hidden_layer, actions)
         self.target_net = dqn.DQN(input_size, hidden_layer, actions)
@@ -49,6 +46,7 @@ class ReinforcementLearning:
         self.steps_done = 0
         self.episode_durations = []
         self.actions = actions
+        self.input_size = input_size
 
     def select_action(self, state):
         sample = random.random()
@@ -62,27 +60,15 @@ class ReinforcementLearning:
         else:
             return torch.LongTensor([random.randrange(self.actions)])
 
-    def plot_durations(self):
-        plt.figure(2)
-        plt.clf()
-        durations_t = torch.FloatTensor(self.episode_durations)
-        plt.title('Training...')
-        plt.xlabel('Episode')
-        plt.ylabel('Duration')
-        plt.plot(durations_t.numpy())
-        # Take 100 episode averages and plot them too
-        if len(durations_t) >= 100:
-            means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
-            means = torch.cat((torch.zeros(99), means))
-            plt.plot(means.numpy())
-
     def optimize_model(self):
         if len(self.memory) < self.BATCH_SIZE:
             return
         transitions = self.memory.sample(self.BATCH_SIZE)
         # Transpose the batch (see http://stackoverflow.com/a/19343/3343043 for
         # detailed explanation).
-        batch = self.TRANSITION(*zip(*transitions))
+        TRANSITION = namedtuple(
+            'Transition', ('state', 'action', 'next_state', 'reward'))
+        batch = TRANSITION(*zip(*transitions))
 
         # Compute a mask of non-final states and concatenate the batch elements
         non_final_mask = torch.ByteTensor(
@@ -131,28 +117,25 @@ class ReinforcementLearning:
         self.optimizer.step()
 
     def step(self, action, cur_price, next_price, days):
-        # Write Logic to determine if at end of time series
-        # Write Logic to figure out reward for action(% Profit?)
+        should_buy = action == 0
+        should_sell = action == 1
+        should_hold = action == 2
 
-        a = action == 0
-        b = action == 1
-        c = action == 2
-
-        if (a):
+        if (should_buy):
             # BUY
             if ((next_price - cur_price) > 0):
                 reward = 10
             else:
                 reward = -10
 
-        if (b):
+        if (should_sell):
             # SELL
             if ((next_price - cur_price) > 0):
                 reward = -10
             else:
                 reward = 10
 
-        if (c):
+        if (should_hold):
             if ((next_price - cur_price) > 0):
                 reward = 0
             else:
@@ -162,31 +145,28 @@ class ReinforcementLearning:
             done = True
         else:
             done = False
-
         return reward, done
 
     def do_reinforcement_learning(self):
         for i_episode in range(self.NUM_EPISODES):
-            self.state = torch.Tensor(self.fd.x_test[1])
-            self.state.unsqueeze(0)
+            state = torch.Tensor(self.fd.x_test[0])
             for t in count():
-                print(t)
                 # Select and perform an action
-                action = self.select_action(self.state)
+                action = self.select_action(state)
                 reward, done = self.step(
-                    action[0], self.fd.x_test[t][9], self.fd.y_test[t], t)
+                    action[0], self.fd.x_test[t][self.input_size - 1], self.fd.y_test[t], t)
                 reward = torch.Tensor([reward])
-
                 next_state = torch.Tensor(self.fd.x_test[(t + 1)])
-                next_state.unsqueeze(0)
                 # Store the transition in memory
-                self.memory.push(self.state, action, next_state, reward)
+                self.memory.push(state, action, next_state, reward)
 
                 # Move to the next state
-                self.state = next_state
+                state = next_state
 
                 # Perform one step of the optimization (on the target network)
                 self.optimize_model()
+                if done:
+                    break
 
             # Update the target network
             if i_episode % self.TARGET_UPDATE == 0:
