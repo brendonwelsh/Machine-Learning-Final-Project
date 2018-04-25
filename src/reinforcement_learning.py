@@ -61,7 +61,7 @@ class ReinforcementLearning:
         self.money = self.fd.norm_data_ls[self.fd.ticker_ls.index(TICKER)].Close.values[0]*20
         self.money_list = []
         self.loss_list = []
-        
+        self.action_list = []
     def select_action(self, state):
         sample = random.random()
         eps_threshold = self.EPS_END + \
@@ -158,7 +158,7 @@ class ReinforcementLearning:
                     price_buy = cur_price
             
             else:
-                reward = -1
+                reward = 0
                 since_buy = 1
                 price_buy = cur_price
             
@@ -166,26 +166,31 @@ class ReinforcementLearning:
         elif (action == 1):
             #SELL
             if (price_buy == -1):
-                reward = -1
+                reward = 0
                 price_buy = -1
                 since_buy = -1
                 
                 
             else:
-                reward = (cur_price - price_buy)*1000
+                reward = (next_price - price_buy)*1000
                 price_buy = -1
                 since_buy = -1
         
         elif (action == 2):
             #HOLD
             if (price_buy == -1):
-                reward = (next_price - cur_price) * 10
+                reward = 0
                 price_buy = -1
                 since_buy = -1
             else:
-                reward = since_buy + (next_price - cur_price) * 100
-                price_buy = price_buy
-                since_buy = since_buy + 1
+                if ((next_price - price_buy) > 0):
+                    reward = since_buy*0.1
+                    price_buy = price_buy
+                    since_buy = since_buy + 1
+                else:
+                    reward = since_buy*-0.1
+                    price_buy = price_buy
+                    since_buy = since_buy + 1
             
         
         if ((days > self.episode_len)):
@@ -211,7 +216,7 @@ class ReinforcementLearning:
         plt.plot(x_coord, time_series.Close[0:test_size])
         plt.scatter(loc_buy, time_series.Close.values[loc_buy[0]], c = 'g')
         plt.scatter(loc_sell, time_series.Close.values[loc_sell[0]], c = 'r')
-        plt.scatter(loc_hold, time_series.Close.values[loc_hold[0]], c = 'y')
+        #plt.scatter(loc_hold, time_series.Close.values[loc_hold[0]], c = 'y')
         return
     
     
@@ -236,9 +241,10 @@ class ReinforcementLearning:
                 reward, done, since_buy, price_buy = self.step(
                     action[0], x[t][self.input_size - 1], y[t], t, since_buy, price_buy)
                 
-                self.money_list.append(self.money)
                 
-                self.reward_list.append(self.reward_list[len(self.reward_list)-1]+reward)
+                self.money_list.append(self.money)
+                self.action_list.append(action[0])
+                self.reward_list.append(reward)
                 
                 reward = Tensor([reward])
                 
