@@ -55,10 +55,10 @@ class financial_data:
         x_train = []
         y_train = []
         for stock in norm_data_ls:
-            for val in range(0, len(stock)-self.input_size-1):
+            for val in range(0, len(stock) - self.input_size - 1):
                 x_train.append(
-                    stock.Close.values[val:val+self.input_size])
-                y_train.append(stock.Close.values[val+self.input_size+1])
+                    stock.Close.values[val:val + self.input_size])
+                y_train.append(stock.Close.values[val + self.input_size + 1])
         return x_train, y_train
 
     def shuffle_data(self, x_train, y_train):
@@ -188,7 +188,8 @@ class financial_data:
         stock_val.columns = ['ticker', 'date', 'Open', 'High', 'Low', 'Close', 'volume',
                              'ex-dividend', 'split_ratio', 'adj_open', 'adj_high', 'adj_low',
                              'adj_close', 'adj_volume']
-        return stock_val[['date', 'Open', 'High', 'Low', 'Close', 'volume', 'ticker']]
+        return stock_val[['date', 'Open', 'High',
+                          'Low', 'Close', 'volume', 'ticker']]
 
 
 if __name__ == '__main__':
