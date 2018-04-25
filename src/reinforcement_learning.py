@@ -59,6 +59,8 @@ class ReinforcementLearning:
         self.episode_list = []
         self.episode_len = 1200
         self.money = self.fd.norm_data_ls[self.fd.ticker_ls.index(TICKER)].Close.values[0]*20
+        self.money_list = []
+        self.loss_list = []
         
     def select_action(self, state):
         sample = random.random()
@@ -100,7 +102,7 @@ class ReinforcementLearning:
         # columns of actions taken
         state_action_values = self.policy_net(
             state_batch).gather(1, action_batch)
-
+        
         # Compute V(s_{t+1}) for all next states.
         next_state_values = Variable(
             torch.zeros(
@@ -112,6 +114,7 @@ class ReinforcementLearning:
         # Compute the expected Q values
         expected_state_action_values = (
             next_state_values * self.GAMMA) + reward_batch
+        
         # Undo volatility (which was used to prevent unnecessary gradients)
         expected_state_action_values = Variable(
             expected_state_action_values.data)
@@ -120,7 +123,9 @@ class ReinforcementLearning:
         loss = F.smooth_l1_loss(
             state_action_values,
             expected_state_action_values)
-
+        
+        self.loss_list.append(loss.data.numpy())
+        
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
@@ -128,7 +133,7 @@ class ReinforcementLearning:
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
-    def step(self, action, cur_price, next_price, days):
+    def step(self, action, cur_price, next_price, days, since_buy, price_buy):
         #Write Logic to determine if at end of time series
         #Write Logic to figure out reward for action(% Profit?)
 
@@ -141,34 +146,54 @@ class ReinforcementLearning:
 
         if (action == 0):
             #BUY
-            if ((next_price - cur_price) > 0):
-                reward = (next_price - cur_price)*5
-                self.money = self.money - cur_price
+            if (price_buy == -1):
+                if ((next_price - cur_price) > 0):
+                    reward = (next_price - cur_price)*1000
+                    since_buy = 1
+                    price_buy = cur_price
+                    
+                else:
+                    reward = (next_price - cur_price)*1000
+                    since_buy = 1
+                    price_buy = cur_price
+            
             else:
-                reward = (next_price - cur_price)*5
-                self.money = self.money - cur_price
-
+                reward = -1
+                since_buy = 1
+                price_buy = cur_price
+            
+                
         elif (action == 1):
             #SELL
-            if ((next_price - cur_price) < 0):
-                reward = (next_price - cur_price)*5
-                self.money = self.money + cur_price
+            if (price_buy == -1):
+                reward = -1
+                price_buy = -1
+                since_buy = -1
+                
+                
             else:
-                reward = (next_price - cur_price)*5
-                self.money = self.money + cur_price
-            
-
+                reward = (cur_price - price_buy)*1000
+                price_buy = -1
+                since_buy = -1
+        
         elif (action == 2):
             #HOLD
-            reward = 0
-               
+            if (price_buy == -1):
+                reward = (next_price - cur_price) * 10
+                price_buy = -1
+                since_buy = -1
+            else:
+                reward = since_buy + (next_price - cur_price) * 100
+                price_buy = price_buy
+                since_buy = since_buy + 1
+            
         
-        if ((days > self.episode_len) or (self.money < 0)):
+        if ((days > self.episode_len)):
             done = True
         else:
             done = False
 
-        return reward, done
+        return reward, done, since_buy, price_buy
 
     def plot_episode(self, time_series, test_size):
         x, y = self.fd.split_data([time_series])
@@ -195,6 +220,8 @@ class ReinforcementLearning:
             #state = Tensor(self.fd.x_test[0])
             x, y = self.fd.split_data([self.fd.norm_data_ls[self.fd.ticker_ls.index(self.TICKER)]])
             state = Tensor(x[0])
+            since_buy = -1
+            price_buy = -1
             self.money = self.fd.norm_data_ls[self.fd.ticker_ls.index(self.TICKER)].Close.values[0]*20
             self.reward_list.append(0)
             for t in count():
@@ -203,8 +230,13 @@ class ReinforcementLearning:
                 action = self.select_action(state)
                 #reward, done, since_buy, price_buy = self.step(
                 #    action[0], self.fd.x_test[t][self.input_size - 1], self.fd.y_test[t], t, since_buy, price_buy)
-                reward, done = self.step(
-                    action[0], x[t][self.input_size - 1], y[t], t)
+                #reward, done = self.step(
+                #    action[0], x[t][self.input_size - 1], y[t], t)
+                
+                reward, done, since_buy, price_buy = self.step(
+                    action[0], x[t][self.input_size - 1], y[t], t, since_buy, price_buy)
+                
+                self.money_list.append(self.money)
                 
                 self.reward_list.append(self.reward_list[len(self.reward_list)-1]+reward)
                 
@@ -225,6 +257,7 @@ class ReinforcementLearning:
                     break
 
             # Update the target network
-            if i_episode % self.TARGET_UPDATE == 0:
-                self.target_net.load_state_dict(self.policy_net.state_dict())
+                if t % 100 == 0:
+                    self.target_net.load_state_dict(self.policy_net.state_dict())
+                    
         print('Complete')
