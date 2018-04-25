@@ -7,15 +7,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import Imputer, MinMaxScaler
 import quandl
 from financial_data import financial_data as fd
-try:
-    profile  # throws an exception when profile isn't defined
-except NameError:
-    def profile(x): return x
-warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-print('running from notebook?')
-#Jake Jupyter notebook test
-class financial_data:
+#print('running from notebook?')
+
+class gen_dataset:
     """
     financial data class contains multiple different
     datasources from Quandl, CSVs and other sources.
@@ -168,7 +163,7 @@ class financial_data:
         return norm_data_ls
 
     @profile
-    def __get_stock_data(self):
+    def __get_stock_data(self, sector):
         """[gets stock data from pickled file of 5 year historic stocks]
 
         Returns:
