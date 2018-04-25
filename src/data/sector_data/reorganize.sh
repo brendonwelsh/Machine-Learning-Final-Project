@@ -1,6 +1,8 @@
-for i in */*.csv
+for i in *.csv
 do
 	echo "this file is $i"
-	ticker = "${f/*-/}" 
-	awk -F"," 'BEGIN { OFS = "," } {$6="ticker"; print}' WIKI-AVVB.csv  > AVVB_new.csv
+	tick="${i/*-/}"
+	ticker="${tick/.*/}"
+	echo $ticker
+	awk -F"," 'BEGIN { OFS = "," } {$6=ticker; print}' $i > $ticker_new.csv
 done
