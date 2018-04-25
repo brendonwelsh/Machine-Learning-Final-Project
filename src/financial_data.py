@@ -117,9 +117,9 @@ class financial_data:
             candle_data = [self.clean_and_scale(
                 RB), self.clean_and_scale(US), self.clean_and_scale(LS)]
             self.candle_data.append(candle_data)
-        self.x_train, self.y_train = self.split_data(self.norm_data_ls)
-        self.x_train, self.y_train, self.x_test, self.y_test = self.shuffle_data(
-            self.x_train, self.y_train)
+        #self.x_train, self.y_train = self.split_data(self.norm_data_ls)
+        #self.x_train, self.y_train, self.x_test, self.y_test = self.shuffle_data(
+        #    self.x_train, self.y_train)
 
     def clean_and_scale(self, candle):
         """[clean data in candle stick]

@@ -148,15 +148,13 @@ class ReinforcementLearning:
             #BUY
             if (price_buy == -1):
                 if ((next_price - cur_price) > 0):
-                    reward = (next_price - cur_price)*1000
+                    reward = (next_price - cur_price)
                     since_buy = 1
                     price_buy = cur_price
-                    
                 else:
-                    reward = (next_price - cur_price)*1000
+                    reward = (next_price - cur_price)
                     since_buy = 1
                     price_buy = cur_price
-            
             else:
                 reward = 0
                 since_buy = 1
@@ -184,11 +182,11 @@ class ReinforcementLearning:
                 since_buy = -1
             else:
                 if ((next_price - price_buy) > 0):
-                    reward = since_buy*0.1
+                    reward = (next_price - price_buy)*10
                     price_buy = price_buy
                     since_buy = since_buy + 1
                 else:
-                    reward = since_buy*-0.1
+                    reward = (next_price - price_buy)*10
                     price_buy = price_buy
                     since_buy = since_buy + 1
             
@@ -221,9 +219,9 @@ class ReinforcementLearning:
     
     
     def do_reinforcement_learning(self):
+        x, y = self.fd.split_data([self.fd.norm_data_ls[self.fd.ticker_ls.index(self.TICKER)]])
         for i_episode in range(self.NUM_EPISODES):
             #state = Tensor(self.fd.x_test[0])
-            x, y = self.fd.split_data([self.fd.norm_data_ls[self.fd.ticker_ls.index(self.TICKER)]])
             state = Tensor(x[0])
             since_buy = -1
             price_buy = -1
