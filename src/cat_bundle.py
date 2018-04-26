@@ -1,3 +1,4 @@
+#this is for datasets
 import os
 import pickle
 import numpy as np
@@ -5,16 +6,11 @@ import warnings
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import Imputer, MinMaxScaler
 import quandl
-import csv
+from financial_data import financial_data as fd
 
-try:
-    profile  # throws an exception when profile isn't defined
-except NameError:
-    def profile(x): return x
-warnings.filterwarnings("ignore", category=RuntimeWarning)
+#print('running from notebook?')
 
-#Jake Jupyter notebook test
-class financial_data:
+class gen_dataset:
     """
     financial data class contains multiple different
     datasources from Quandl, CSVs and other sources.
@@ -48,96 +44,6 @@ class financial_data:
         self.ticker_ls = [stock['Name'].values[1] for stock in self.data_ls]
 
     @profile
-    def import_sector(self):
-        """
-        imports sector data as indices of 25 heavily traded securities
-        per sector for the 5 major trading sectors. Data from Quandl WIKI/PRICES
-        and includes open, close, high, low, volume, dividend, split, and all 
-        adjusted values
-        """
-        sectors = {}
-        finance = {}
-        health = {}
-        re = {}
-        tech = {}
-        energy = {}
-        k = 1
-        for filename in os.listdir('Financial'):
-            with open('Financial/'+filename) as fin:
-                reader=csv.reader(fin, skipinitialspace=True, quotechar="'")
-                security = filename.split('.')[0]
-                temp_dict = {}
-                for row in reader:
-                    temp_dict[row[0]]=row[1:]
-            #add temp dict to complete finance dict
-            print('temp length = '+str(len(temp_dict))+" for the security"+security)
-            finance[security] = temp_dict
-            k = k+1
-        print('finance length = '+str(len(finance)))
-        #print(finance)
-
-        for filename in os.listdir('Health'):
-            with open('Health/'+filename) as fin:
-                reader=csv.reader(fin, skipinitialspace=True, quotechar="'")
-                security = filename.split('.')[0]
-                temp_dict = {}
-                for row in reader:
-                        temp_dict[row[0]]=row[1:]
-        #add temp dict to complete finance dict
-        print('temp length = '+str(len(temp_dict))+" for the security"+security)
-        health[security] = temp_dict
-        k = k+1
-        print('health length = '+str(len(health)))
-
-        for filename in os.listdir('RE'):
-            with open('RE/'+filename) as fin:
-                reader=csv.reader(fin, skipinitialspace=True, quotechar="'")
-                security = filename.split('.')[0]
-                temp_dict = {}
-                for row in reader:
-                        temp_dict[row[0]]=row[1:]
-        #add temp dict to complete finance dict
-        print('temp length = '+str(len(temp_dict))+" for the security"+security)
-        re[security] = temp_dict
-        k = k+1
-        print('Real Estate length = '+str(len(re)))
-
-        for filename in os.listdir('Tech'):
-            with open('Tech/'+filename) as fin:
-                reader=csv.reader(fin, skipinitialspace=True, quotechar="'")
-                security = filename.split('.')[0]
-                temp_dict = {}
-                for row in reader:
-                        temp_dict[row[0]]=row[1:]
-        #add temp dict to complete finance dict
-        print('temp length = '+str(len(temp_dict))+" for the security"+security)
-        tech[security] = temp_dict
-        k = k+1
-        print('tech length = '+str(len(tech)))
-
-        for filename in os.listdir('Energy'):
-            with open('Energy/'+filename) as fin:
-                reader=csv.reader(fin, skipinitialspace=True, quotechar="'")
-                security = filename.split('.')[0]
-                #print("parsing energy security "+security)
-                temp_dict = {}
-                for row in reader:
-                        temp_dict[row[0]]=row[1:]
-        #add temp dict to complete finance dict
-        print('temp length = '+str(len(temp_dict))+" for the security"+security)
-        energy[security] = temp_dict
-        k = k+1
-        print('energy length = '+str(len(energy)))
-        #merge all 5 dicts
-        sectors["energy"] = energy
-        sectors["health"] = health
-        sectors["re"] = re
-        sectors["finance"] = finance
-        sectors["tech"] = tech
-        print('sectors length = '+str(len(sectors)))
-
-        return sectors
-    
     def split_data(self, norm_data_ls):
         """[method to split training and test data]
 
@@ -147,10 +53,10 @@ class financial_data:
         x_train = []
         y_train = []
         for stock in norm_data_ls:
-            for val in range(0, len(stock) - self.input_size - 1):
+            for val in range(0, len(stock)-self.input_size-1):
                 x_train.append(
-                    stock.Close.values[val:val + self.input_size])
-                y_train.append(stock.Close.values[val + self.input_size + 1])
+                    stock.Close.values[val:val+self.input_size])
+                y_train.append(stock.Close.values[val+self.input_size+1])
         return x_train, y_train
 
     def shuffle_data(self, x_train, y_train):
@@ -209,9 +115,9 @@ class financial_data:
             candle_data = [self.clean_and_scale(
                 RB), self.clean_and_scale(US), self.clean_and_scale(LS)]
             self.candle_data.append(candle_data)
-        #self.x_train, self.y_train = self.split_data(self.norm_data_ls)
-        #self.x_train, self.y_train, self.x_test, self.y_test = self.shuffle_data(
-        #    self.x_train, self.y_train)
+        self.x_train, self.y_train = self.split_data(self.norm_data_ls)
+        self.x_train, self.y_train, self.x_test, self.y_test = self.shuffle_data(
+            self.x_train, self.y_train)
 
     def clean_and_scale(self, candle):
         """[clean data in candle stick]
@@ -257,7 +163,7 @@ class financial_data:
         return norm_data_ls
 
     @profile
-    def __get_stock_data(self):
+    def __get_stock_data(self, sector):
         """[gets stock data from pickled file of 5 year historic stocks]
 
         Returns:
@@ -280,8 +186,7 @@ class financial_data:
         stock_val.columns = ['ticker', 'date', 'Open', 'High', 'Low', 'Close', 'volume',
                              'ex-dividend', 'split_ratio', 'adj_open', 'adj_high', 'adj_low',
                              'adj_close', 'adj_volume']
-        return stock_val[['date', 'Open', 'High',
-                          'Low', 'Close', 'volume', 'ticker']]
+        return stock_val[['date', 'Open', 'High', 'Low', 'Close', 'volume', 'ticker']]
 
 
 if __name__ == '__main__':
