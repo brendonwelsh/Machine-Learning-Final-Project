@@ -5,8 +5,6 @@ import warnings
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import Imputer, MinMaxScaler
 import quandl
-import csv
-
 try:
     profile  # throws an exception when profile isn't defined
 except NameError:
@@ -14,16 +12,11 @@ except NameError:
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 #Jake Jupyter notebook test
-class financial_data:
+class sector_data:
     """
-    financial data class contains multiple different
-    datasources from Quandl, CSVs and other sources.
-    Which are cleaned, scaled and split in this class.
-    This data will then pass into the prediction model.
-    TODO:
-    -Expand datasources available
-    -Perform more error checking
-    -Allow more customizable test train data
+    data is pulled from Quandl WIKI/PRICES by individual securities
+    and bundled into index funds of 25 securities each to represent
+    the common 5 industry trading sectors
     """
     @profile
     def __init__(self, input_size, split=0.5):
@@ -48,96 +41,6 @@ class financial_data:
         self.ticker_ls = [stock['Name'].values[1] for stock in self.data_ls]
 
     @profile
-    def import_sector(self):
-        """
-        imports sector data as indices of 25 heavily traded securities
-        per sector for the 5 major trading sectors. Data from Quandl WIKI/PRICES
-        and includes open, close, high, low, volume, dividend, split, and all 
-        adjusted values
-        """
-        sectors = {}
-        finance = {}
-        health = {}
-        re = {}
-        tech = {}
-        energy = {}
-        k = 1
-        for filename in os.listdir('Financial'):
-            with open('Financial/'+filename) as fin:
-                reader=csv.reader(fin, skipinitialspace=True, quotechar="'")
-                security = filename.split('.')[0]
-                temp_dict = {}
-                for row in reader:
-                    temp_dict[row[0]]=row[1:]
-            #add temp dict to complete finance dict
-            print('temp length = '+str(len(temp_dict))+" for the security"+security)
-            finance[security] = temp_dict
-            k = k+1
-        print('finance length = '+str(len(finance)))
-        #print(finance)
-
-        for filename in os.listdir('Health'):
-            with open('Health/'+filename) as fin:
-                reader=csv.reader(fin, skipinitialspace=True, quotechar="'")
-                security = filename.split('.')[0]
-                temp_dict = {}
-                for row in reader:
-                        temp_dict[row[0]]=row[1:]
-        #add temp dict to complete finance dict
-        print('temp length = '+str(len(temp_dict))+" for the security"+security)
-        health[security] = temp_dict
-        k = k+1
-        print('health length = '+str(len(health)))
-
-        for filename in os.listdir('RE'):
-            with open('RE/'+filename) as fin:
-                reader=csv.reader(fin, skipinitialspace=True, quotechar="'")
-                security = filename.split('.')[0]
-                temp_dict = {}
-                for row in reader:
-                        temp_dict[row[0]]=row[1:]
-        #add temp dict to complete finance dict
-        print('temp length = '+str(len(temp_dict))+" for the security"+security)
-        re[security] = temp_dict
-        k = k+1
-        print('Real Estate length = '+str(len(re)))
-
-        for filename in os.listdir('Tech'):
-            with open('Tech/'+filename) as fin:
-                reader=csv.reader(fin, skipinitialspace=True, quotechar="'")
-                security = filename.split('.')[0]
-                temp_dict = {}
-                for row in reader:
-                        temp_dict[row[0]]=row[1:]
-        #add temp dict to complete finance dict
-        print('temp length = '+str(len(temp_dict))+" for the security"+security)
-        tech[security] = temp_dict
-        k = k+1
-        print('tech length = '+str(len(tech)))
-
-        for filename in os.listdir('Energy'):
-            with open('Energy/'+filename) as fin:
-                reader=csv.reader(fin, skipinitialspace=True, quotechar="'")
-                security = filename.split('.')[0]
-                #print("parsing energy security "+security)
-                temp_dict = {}
-                for row in reader:
-                        temp_dict[row[0]]=row[1:]
-        #add temp dict to complete finance dict
-        print('temp length = '+str(len(temp_dict))+" for the security"+security)
-        energy[security] = temp_dict
-        k = k+1
-        print('energy length = '+str(len(energy)))
-        #merge all 5 dicts
-        sectors["energy"] = energy
-        sectors["health"] = health
-        sectors["re"] = re
-        sectors["finance"] = finance
-        sectors["tech"] = tech
-        print('sectors length = '+str(len(sectors)))
-
-        return sectors
-    
     def split_data(self, norm_data_ls):
         """[method to split training and test data]
 
