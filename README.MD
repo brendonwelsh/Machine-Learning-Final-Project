@@ -1,7 +1,8 @@
 # Machine Learning Final Project
-## Trading Algorithm Python 3.6 
 
 ![Alt text](http://www1.coe.neu.edu/~abisulco/img/stocks.gif)
+
+
 Github repository for the machine learning trading algorithm. Still a work in progress. The goal is to use reinforcement learning in order to determine when to buy or hold a stock. 
 
 ### Setup
