@@ -13,7 +13,6 @@ except NameError:
     def profile(x): return x
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-#Jake Jupyter notebook test
 class financial_data:
     """
     financial data class contains multiple different
@@ -55,6 +54,7 @@ class financial_data:
         and includes open, close, high, low, volume, dividend, split, and all 
         adjusted values
         """
+        #TODO UPDATE PYTHONIC SYNTAX
         sectors = {}
         finance = {}
         health = {}
