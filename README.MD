@@ -1,6 +1,6 @@
 # Machine Learning Final Project
 
-![Alt text](http://www1.coe.neu.edu/~abisulco/img/stocks.gif)
+![Alt text](https://abisulco.com/img/stocks.gif)
 
 
 Github repository for the machine learning trading algorithm. Still a work in progress. The goal is to use reinforcement learning in order to determine when to buy or hold a stock. 
