@@ -1,5 +1,5 @@
 # Machine Learning Final Project
-
+Find out more [here](https://docs.google.com/presentation/d/1aCeB7Fr_KRg486TcoJ9SwiK-Yt1HUlEglGdI1NzHV6Q/edit?usp=sharing)
 ![Alt text](https://abisulco.com/img/stocks.gif)
 
 
